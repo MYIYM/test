@@ -1,152 +1,70 @@
-var scene, camera, renderer, mesh;
-var meshFloor, ambientLight, light;
+// ページの読み込みを待つ
+	 window.addEventListener('load', init);
 
-var crate, crateTexture, crateNormalMap, crateBumpMap;
+	 function init() {
+		 // 処理内容1、2、3〜〜〜
 
-var keyboard = {};
-var player = { height:1.8, speed:0.2, turnSpeed:Math.PI*0.02 };
-var USE_WIREFRAME = false;
-
-function init() {
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(90, 1280/720, 0.1, 1000);
+		 // 画面の見えるサイズを指定
+		 const width = 500;
+		 const height = 500;
 
 
-// 浮いてる四角
-  mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({color:0X0000FF, wireframe:USE_WIREFRAME})
-  );
-  mesh.position.y += 1;
-  mesh.receiveShadow = true;
-  mesh.castShadow = true;
-  scene.add(mesh);
+		 // レンダラーを作成
+		 const renderer = new THREE.WebGLRenderer({
+			 canvas: document.querySelector('#canvas')
+		 });
+		 renderer.setPixelRatio(window.devicePixelRatio);
+		 renderer.setSize(width, height);
 
 
-// 床
-  meshFloor = new THREE.Mesh(
-    new THREE.PlaneGeometry(20,20, 10,10),
-    new THREE.MeshPhongMaterial({color:0xffffff, wireframe:USE_WIREFRAME})
-  );
-  meshFloor.rotation.x -= Math.PI / 2;
-  meshFloor.receiveShadow = true;
-  scene.add(meshFloor);
-
-  ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
-  scene.add(ambientLight);
-
-  light = new THREE.PointLight(0xffffff, 0.8, 18);
-  light.position.set(-3,6,-3);
-  light.castShadow = true;
-  light.shadow.camera.near = 0.1;
-  light.shadow.camera.far = 25;
-  scene.add(light);
+		 // シーンを作成
+		 const scene = new THREE.Scene();
 
 
-  // 箱
-  var textureLoader = new THREE.TextureLoader();
-  crateTexture = textureLoader.load("https://raw.githubusercontent.com/MYIYM/ORNG_ALEN1/master/みかん星人顔.jpg");
-  crateBumpMap = textureLoader.load("https://raw.githubusercontent.com/MYIYM/ORNG_ALEN1/master/みかん星人顔.jpg");
-  crateNormalMap = textureLoader.load("https://raw.githubusercontent.com/MYIYM/ORNG_ALEN1/master/みかん星人顔.jpg");
-
-  crate = new THREE.Mesh(
-    new THREE.BoxGeometry(3,3,3),
-    new THREE.MeshPhongMaterial({
-      color:0xffffff,
-
-      map:crateTexture,
-      bumpMap:crateBumpMap,
-      normalMap:crateNormalMap
-    })
-  );
-  scene.add(crate);
-  crate.position.set(2.5, 3/2, 2.5);
-  crate.receiveShadow = true;
-  crate.castShadow = true;
+		 // カメラを作成
+		 const camera = new THREE.PerspectiveCamera(45, width / height);
+		 //	xyz軸が50
+		 camera.position.set(50, 50, 50);
+		 // 原点を見る
+		 camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 
-// MTL/OBJ 読み込み
-  var mtlLoader = new THREE.MTLLoader();
-  mtlLoader.load('https://raw.githubusercontent.com/MYIYM/ORNG_ALEN/master/mikan_3d.mtl', function(materials){
-
-    materials.preload();
-    var objLoader = new THREE.OBJLoader();
-    objLoader.setMaterials(materials);
-
-    objLoader.load('https://raw.githubusercontent.com/MYIYM/ORNG_ALEN/master/mikan_3d.obj', function(mesh){
-
-      mesh.traverse(function(node){
-        if (node instanceof THREE.Mesh) {
-          node.castShadow = true;
-          node.receiveShadow = true;
-        }
-      });
-
-      scene.add(mesh);
-      mesh.position.set(-5, 0, 4);
-      mesh.rotation.y = -Math.PI/4;
-    });
-  });
+		 // 箱を作成
+		 //	箱の大きさ（横×縦×横）
+		 const geometry = new THREE.BoxGeometry(20, 20, 20);
+		 const material = new THREE.MeshNormalMaterial();
+		 const box = new THREE.Mesh(geometry, material);
+		 // 箱の位置　（右，上，左）
+		 box.position.set(0, -50, 0);
+		 scene.add(box);
 
 
-  camera.position.set(0, player.height, -5);
-  camera.lookAt(new THREE.Vector3(0, player.height,0));
+		 // mikan_3d
+		 // mtl
+		 const mikan_mtl = new THREE.MTLLoader();
+		 mikan_mtl.load("models/mikan_3d.mtl", function(materials){
+			 materials.preload();
 
-  renderer = new THREE.WebGLRenderer();
-  renderer.setSize(1280, 720);
+			 // obj
+			 var mikan_obj = new THREE.OBJLoader();
+			 mikan_obj.setMaterials(materials);
 
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.BasicShadowMap;
+			 mikan_obj.load("models/mikan_3d.obj", function(mesh){
 
-  document.body.appendChild(renderer.domElement);
+				 scene.add(mesh);
+				 mesh.position.set(0,0,0);
 
-  animate();
+			 });
 
-}
+		 });
 
-function animate() {
-  requestAnimationFrame(animate);
 
-  mesh.rotation.x += 0.01;
-  mesh.rotation.y += 0.02;
-  crate.rotation.y += 0.01;
+		 // 毎フレーム時に実行されるループイベントです
+		 tick();
+		 function tick() {
+			 box.rotation.y += 0.005;
+			 renderer.render(scene, camera); // レンダリング
 
-  if (keyboard[87]) { // W key
-    camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
-    camera.position.z -= -Math.cos(camera.rotation.y) * player.speed;
-  }
-  if (keyboard[83]) { // S key
-    camera.position.x += Math.sin(camera.rotation.y) * player.speed;
-    camera.position.z += -Math.cos(camera.rotation.y) * player.speed;
-  }
-  if (keyboard[65]) { // A key
-    camera.position.x += Math.sin(camera.rotation.y + Math.PI/2) * player.speed;
-    camera.position.z += -Math.cos(camera.rotation.y + Math.PI/2) * player.speed;
-  }
-  if (keyboard[68]) { //D key
-    camera.position.x += Math.sin(camera.rotation.y - Math.PI/2) * player.speed;
-    camera.position.z += -Math.cos(camera.rotation.y - Math.PI/2) * player.speed;
-  }
-
-  if (keyboard[37]) { // ボタン左
-    camera.rotation.y -= player.turnSpeed;
-  }
-  if (keyboard[39]) { // ボタン右
-    camera.rotation.y += player.turnSpeed;
-  }
-
-  renderer.render(scene, camera);
-}
-
-function keyDown(evwnt) {
-  keyboard[event.keyCode] = true;
-}
-
-function keyUp(event) {
-  keyboard[event.keyCode] = false;
-}
-
-window.addEventListener('keydown', keyDown);
-window.addEventListener('keyup', keyUp);
-
-window.onload = init;
+			 requestAnimationFrame(tick);
+		 }
+	 }
