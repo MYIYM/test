@@ -48,14 +48,14 @@
 		 // mikan_3d
 		 // mtl
 		 const mikan_mtl = new THREE.MTLLoader();
-		 mikan_mtl.load("models/mikan3d.mtl", function(materials){
+		 mikan_mtl.load("models/mikann3d.mtl", function(materials){
 			 materials.preload();
 
 			 // obj
 			 var mikan_obj = new THREE.OBJLoader();
 			 mikan_obj.setMaterials(materials);
 
-			 mikan_obj.load("models/mikan3d.obj", function(mesh){
+			 mikan_obj.load("models/mikann3d.obj", function(mesh){
 
 				 mesh.scale.set(100,100,100);
 				 mesh.position.set(0,0,0);
